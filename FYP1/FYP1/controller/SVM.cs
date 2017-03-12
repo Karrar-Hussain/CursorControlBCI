@@ -46,7 +46,6 @@ namespace FYP1.controller
                 fileExistance = true;
                
             }
-
                 return fileExistance;
         }
         public double buildSVMTestCorpus(string filename)
@@ -135,8 +134,7 @@ namespace FYP1.controller
                 }
             }*/
             return tp;
-        }
-        
+        }        
         public string svmRealTimeTest(double[] testData)
         {
             int len = 0;
@@ -146,8 +144,7 @@ namespace FYP1.controller
                 else
                     i += escape;
             svm_problem tempProb = _prob;
-            tempProb.x[0] = new svm_node[len];
-            
+            tempProb.x[0] = new svm_node[len];            
             //testData=scaleData(testData);
             /*List<List<double>> testD = new List<List<double>>();
             testD.Add(testData);
@@ -169,13 +166,8 @@ namespace FYP1.controller
                 else
                     j += escape;
             }
-            
-            //_test.y = new double[1];
-            //_test.y[0] = 0 ;
-            //_prob.x[0] = _test.x[0];
             if(len>0)
             tempProb = ProblemHelper.ScaleProblem(tempProb);
-            //var predictY = svm.Predict(ProblemHelper.ScaleProblem(_test, 0, 1).x[0]);
             var predictY = svm.Predict(tempProb.x[0]);
             return predictionDictionary[(int)predictY];
         }

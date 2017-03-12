@@ -42,7 +42,6 @@ namespace FYP1.controller
         public void setUp(double[][] up) { upArr = up; }
         public void setDown(double[][] down) { downArr = down; }
         public void setNeutral(double[][] neutral) { neutralArr = neutral; }
-
         public KNN(double[][] right,double[][] left,double[][] up,double[][] down)
         {
             rightArr = right;
@@ -143,7 +142,6 @@ namespace FYP1.controller
         /// <param name="For pca input data and classifier for realtime eeg data"></param>
         /// <returns></returns>
         ///////////////////////////////////////////////////////////////////////
-
 
         public bool buildCorpusSimple(string subName="karrar")
         {
@@ -285,16 +283,12 @@ namespace FYP1.controller
             }
             if (right.Count>0)
                 rightArr = right.Select(a => a.ToArray()).ToArray();
-
             if (left.Count > 0)
                 leftArr = left.Select(a => a.ToArray()).ToArray();
-
             if (up.Count > 0)
                 upArr = up.Select(a => a.ToArray()).ToArray();
-
             if (down.Count > 0)
                 downArr = down.Select(a => a.ToArray()).ToArray();
-
             if (neutral.Count > 0)
                 neutralArr = neutral.Select(a => a.ToArray()).ToArray();
         }

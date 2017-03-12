@@ -15,8 +15,8 @@ namespace FYP1
 {
     public partial class Form1 : Form
     {
-        bool Play_Stop=false;
-        Thread td1,startRealtime;
+        bool Play_Stop = false;
+        Thread td1, startRealtime;
         Signal training = new Signal();
         ICA ica = new ICA();
         PCA pca = new PCA();
@@ -86,7 +86,10 @@ namespace FYP1
                 startRealtime.Abort();
 
             pnlTrain.Enabled = false;
+            //if(td1.IsAlive)
+                //td1.Suspend();
             moveTrainObject();
+            //td1.Resume();
             pnlTrain.Enabled = true;
             Properties.Settings.Default.Save();
             Properties.Settings.Default.id = Properties.Settings.Default.id += 1;
@@ -96,8 +99,8 @@ namespace FYP1
             string name, id, type;
             name = txtNameTrain.Text;
             id = lblIDTrain.Text;
-            long timespan = trainTime+30000000;
-            type = cmbTrainType.SelectedItem.ToString();            
+            long timespan = trainTime + 30000000;
+            type = cmbTrainType.SelectedItem.ToString();
             //when device connected uncomment this
             progress.Minimum = 1;
             progress.Maximum = 100;
@@ -108,21 +111,21 @@ namespace FYP1
             progress.Style = ProgressBarStyle.Blocks;
             progress.ForeColor = Color.GreenYellow;
             dirPic.Image = Properties.Resources.Picture2;
-            int x = 512, y = 250,count=1;
+            int x = 512, y = 250, count = 1;
             dirPic.Visible = true;
             var t1 = System.DateTime.Now.TimeOfDay.Add(new TimeSpan(timespan));
             if (cmbTrainType.SelectedIndex == 1)
             {
-                x = 512; y = 500;
+                x = 480; y = 500;
                 while (TimeSpan.Compare(t1, System.DateTime.Now.TimeOfDay) == 1)
                 {
-                    y -= 4;
+                    y -= 3;
                     dirPic.Location = new Point(x, y);
                     this.Refresh();
-                    System.Threading.Thread.Sleep(250);
+                    System.Threading.Thread.Sleep(100);
                     if (count == 5)
                     {
-                        td1 = new Thread(() => training.startUpdated(id, name, type,trainTime));
+                        td1 = new Thread(() => training.startUpdated(id, name, type, trainTime));
                         td1.Start();
                     }
                     count++;
@@ -132,22 +135,22 @@ namespace FYP1
             }
             else if (cmbTrainType.SelectedIndex == 2)
             {
-                x = 512; y = 100;
+                x = 480; y = 100;
                 while (TimeSpan.Compare(t1, System.DateTime.Now.TimeOfDay) == 1)
                 {
-                    y += 4;
+                    y += 3;
                     dirPic.Location = new Point(x, y);
                     this.Refresh();
-                    System.Threading.Thread.Sleep(250);
+                    System.Threading.Thread.Sleep(100);
                     progress.PerformStep();
                     if (count == 5)
-                        new Thread(() => training.startUpdated(id, name, type,trainTime)).Start();
+                        new Thread(() => training.startUpdated(id, name, type, trainTime)).Start();
                     count++;
                 }
             }
             else if (cmbTrainType.SelectedIndex == 3)
             {
-                x = 670; y = 263; //651 307673, 263699, 263
+                x = 670; y = 260; //651 307673, 263699, 263
                 avatar.Visible = true;
                 dirPic.Visible = false;
                 dirPic.BringToFront();
@@ -178,7 +181,7 @@ namespace FYP1
             }
             else if (cmbTrainType.SelectedIndex == 4)
             {
-                x = 50; y = 263;
+                x = 50; y = 260;
                 hole.Visible = true;
                 //avatar.Visible = true;
                 //dirPic.Visible = false;
@@ -221,7 +224,6 @@ namespace FYP1
                 x = 480; y = 255;
                 while (TimeSpan.Compare(t1, System.DateTime.Now.TimeOfDay) == 1)
                 {
-
                     dirPic.Location = new Point(x, y);
                     this.Refresh();
                     System.Threading.Thread.Sleep(250);
@@ -287,20 +289,18 @@ namespace FYP1
         public void floatObject(int timer = 300000000)
         {
             var t1 = System.DateTime.Now.TimeOfDay.Add(new TimeSpan(timer));
-            //dirPic.Invoke((MethodInvoker)(() => dirPic.Visible = true));
-            //dirPic.Image = Properties.Resources.Picture2;
             int x = 480, y = 250, z = y;
             while (TimeSpan.Compare(t1, System.DateTime.Now.TimeOfDay) == 1 || true)
             {
                 if (z < 265)
                 {
-                    y += 3;
+                    y += 2;
                     if (y > 255)
                         z = y;
                 }
                 else
                 {
-                    y -= 3;
+                    y -= 2;
                     if (y < 245)
                         z = y;
                 }
@@ -309,10 +309,10 @@ namespace FYP1
                 System.Threading.Thread.Sleep(20);
             }
 
-        }        
+        }
         private bool startRealTime()
         {
-            bool bol=false;
+            bool bol = false;
             if (string.IsNullOrEmpty(txtNameTest.Text))
             {
                 MessageBox.Show("Please enter your name!", "Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -329,8 +329,8 @@ namespace FYP1
             else if (cmbClassifier.SelectedIndex == 1)
             {
                 signal = new Signal();
-                if (td1 != null)
-                    td1.Abort();
+                if ((td1.ThreadState & (ThreadState.Unstarted | ThreadState.Stopped))==0)
+                    td1.Suspend();
                 if (startRealtime != null)
                 {
                     startRealtime.Abort();
@@ -346,7 +346,8 @@ namespace FYP1
             }
             else
             {
-                if (td1.IsAlive)
+                signal = new Signal();
+                if ((td1.ThreadState & (ThreadState.Unstarted | ThreadState.Stopped)) == 0)
                     td1.Suspend();
                 if (startRealtime != null)
                 {
@@ -377,10 +378,12 @@ namespace FYP1
             {
                 btnStartTest.BackgroundImage = Properties.Resources.Media_Controls_Play_icon;
                 Play_Stop = false;
-                if(startRealtime!= null)
-                startRealtime.Abort();
-                if (td1 != null)
+                if (startRealtime != null)
+                    startRealtime.Abort();
+                if ((td1.ThreadState & (ThreadState.Unstarted | ThreadState.Stopped)) == 0)
+                {
                     td1.Resume();
+                }
             }
         }
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -390,7 +393,6 @@ namespace FYP1
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             base.OnFormClosing(e);
-
             if (e.CloseReason == CloseReason.WindowsShutDown) return;
             switch (MessageBox.Show(this, "Are you sure you want to close?", "Closing", MessageBoxButtons.YesNo))
             {
@@ -399,8 +401,10 @@ namespace FYP1
                     break;
                 default:
                     if(td1!= null)
-                    td1.Abort();
-                    if (startRealtime != null)
+                    if ((td1.ThreadState & (ThreadState.Unstarted | ThreadState.Stopped)) == 0)
+                        td1.Abort();
+                    if(startRealtime!= null)
+                    if ((startRealtime.ThreadState & (ThreadState.Unstarted | ThreadState.Stopped)) == 0)
                         startRealtime.Abort();
                     break;
             }
@@ -498,16 +502,16 @@ namespace FYP1
             {
                 svmScale.buildSVMCorpus(train);
                 svmScale.scaleSVMData(train);
-                ready=svm.buildSVMCorpus(train);
+                ready = svm.buildSVMCorpus(train);
             }
             if (ready)
             {
                 svmCrossFileAccuracy(train, svmtest, test);
             }
         }
-        private void svmCrossFileAccuracy(string train,SVMScale svmtest,string test)
+        private void svmCrossFileAccuracy(string train, SVMScale svmtest, string test)
         {
-            svmtest.buildSVMCorpus(test);
+            svmtest.buildSVMCorpusUpdated(test);
             double acc = 0, bacc = 0, c = 1;
             svm.C = 0.5;
             for (int i = 0; i < 10; i++)

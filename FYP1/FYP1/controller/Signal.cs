@@ -14,11 +14,12 @@ namespace FYP1.controller
     class Signal
     {
         int userID = -1;
-        string filename;// = "AverageBandPowers.csv";
+        string filename;
         PCA pca;
         KNN knn;
         SVM svm;
         SVMScale svmscale;
+        bool ready = false;
         public Signal()
         {
             pca = new PCA();
@@ -26,7 +27,7 @@ namespace FYP1.controller
             svm = new SVM();
             svmscale = new SVMScale();
         }
-        void engine_UserAdded_Event(object sender, EmoEngineEventArgs e)
+        private void engine_UserAdded_Event(object sender, EmoEngineEventArgs e)
         {
             Console.WriteLine("User Added Event has occured");
             userID = (int)e.userId;
@@ -54,13 +55,13 @@ namespace FYP1.controller
             if (isLeftWink)
             {
                 Mouse.LeftClick();
-                MessageBox.Show("Left Clicked!");
+                //MessageBox.Show("Left Clicked!");
             }
 
             if (isRightWink)
             {
                 Mouse.RightClick();
-                MessageBox.Show("Right Clicked!");
+                //MessageBox.Show("Right Clicked!");
             }
         }
         public bool startRealtimeKNN(string id, string name)
@@ -106,7 +107,6 @@ namespace FYP1.controller
             }
             return ready;
         }
-        bool ready = false;
         public bool startRealtimeSVM(string id, string name)
         {
             EmoEngine engine = EmoEngine.Instance;
@@ -122,10 +122,8 @@ namespace FYP1.controller
                 ready = svm.buildSVMCorpus(name);
                 startRealtimeSVM(id, name);
             }
-            IntPtr state = new IntPtr(1);
             Thread newThread;
             int itr = 0;
-            state = EdkDll.IS_Create();
             double[] alpha = new double[1];
             double[] low_beta = new double[1];
             double[] high_beta = new double[1];
@@ -159,77 +157,6 @@ namespace FYP1.controller
             }
 
             return ready;
-        }
-        public void start(string id, string name, string type,long trainTime)
-        {
-            string header = "Theta, Alpha, Low_beta, High_beta, Gamma, Channel";
-            name = name + type + ".csv";
-            filename = name;
-            if (!File.Exists(filename))
-            {
-                using (StreamWriter file = File.CreateText(filename))
-                {
-                    file.WriteLine(header);
-                    writeDataFile(file,trainTime);
-                }
-            }
-            else
-            {
-                using (StreamWriter sw = File.AppendText(filename))
-                {
-                    writeDataFile(sw,trainTime);
-                }
-            }   
-        }
-        public void writeDataFile(StreamWriter file, long trainTime)
-        {
-            EmoEngine engine = EmoEngine.Instance;
-            engine.UserAdded += new EmoEngine.UserAddedEventHandler(engine_UserAdded_Event);
-            engine.Connect();
-            EdkDll.IEE_DataChannel_t[] channelList = new EdkDll.IEE_DataChannel_t[5] { EdkDll.IEE_DataChannel_t.IED_AF3, EdkDll.IEE_DataChannel_t.IED_AF4, EdkDll.IEE_DataChannel_t.IED_T7, EdkDll.IEE_DataChannel_t.IED_T8, EdkDll.IEE_DataChannel_t.IED_O1 };
-            int itr = 0;
-            var t1 = System.DateTime.Now.TimeOfDay.Add(new TimeSpan(trainTime));
-
-            while (TimeSpan.Compare(t1, System.DateTime.Now.TimeOfDay) == 1)
-            {
-                engine.ProcessEvents(10);
-                if (userID < 0) continue;
-                double[] alpha = new double[1];
-                double[] low_beta = new double[1];
-                double[] high_beta = new double[1];
-                double[] gamma = new double[1];
-                double[] theta = new double[1];
-                for (int i = 0; i < 5; i++)
-                {
-                    engine.IEE_GetAverageBandPowers((uint)userID, channelList[i], theta, alpha, low_beta, high_beta, gamma);
-                    if (itr > 3)
-                    {
-                        file.Write(theta[0] + ",");
-                        file.Write(alpha[0] + ",");
-                        file.Write(low_beta[0] + ",");
-                        file.Write(high_beta[0] + ",");
-                        file.Write(gamma[0] + ",");
-                    }
-                    //      Console.WriteLine("Theta: " + theta[0]);
-                }
-                if (itr > 3)
-                {
-                    if (filename.Contains("Up"))
-                        file.WriteLine("Up");
-                    else if (filename.Contains("Down"))
-                        file.WriteLine("Down");
-                    else if (filename.Contains("Left"))
-                        file.WriteLine("Left");
-                    else if (filename.Contains("Right"))
-                        file.WriteLine("Right");
-                    else if (filename.Contains("Neutral"))
-                        file.WriteLine("Neutral");
-                }
-                itr++;
-                Thread.Sleep(500);
-            }
-            file.Close();
-            engine.Disconnect();
         }
         public void startUpdated(string id, string name, string type, long trainTime)
         {
@@ -294,6 +221,77 @@ namespace FYP1.controller
                     else if (type.Equals("Right"))
                         file.WriteLine("Right");
                     else if (type.Equals("Neutral"))
+                        file.WriteLine("Neutral");
+                }
+                itr++;
+                Thread.Sleep(500);
+            }
+            file.Close();
+            engine.Disconnect();
+        }
+        public void start(string id, string name, string type,long trainTime)
+        {
+            string header = "Theta, Alpha, Low_beta, High_beta, Gamma, Channel";
+            name = name + type + ".csv";
+            filename = name;
+            if (!File.Exists(filename))
+            {
+                using (StreamWriter file = File.CreateText(filename))
+                {
+                    file.WriteLine(header);
+                    writeDataFile(file,trainTime);
+                }
+            }
+            else
+            {
+                using (StreamWriter sw = File.AppendText(filename))
+                {
+                    writeDataFile(sw,trainTime);
+                }
+            }   
+        }
+        public void writeDataFile(StreamWriter file, long trainTime)
+        {
+            EmoEngine engine = EmoEngine.Instance;
+            engine.UserAdded += new EmoEngine.UserAddedEventHandler(engine_UserAdded_Event);
+            engine.Connect();
+            EdkDll.IEE_DataChannel_t[] channelList = new EdkDll.IEE_DataChannel_t[5] { EdkDll.IEE_DataChannel_t.IED_AF3, EdkDll.IEE_DataChannel_t.IED_AF4, EdkDll.IEE_DataChannel_t.IED_T7, EdkDll.IEE_DataChannel_t.IED_T8, EdkDll.IEE_DataChannel_t.IED_O1 };
+            int itr = 0;
+            var t1 = System.DateTime.Now.TimeOfDay.Add(new TimeSpan(trainTime));
+
+            while (TimeSpan.Compare(t1, System.DateTime.Now.TimeOfDay) == 1)
+            {
+                engine.ProcessEvents(10);
+                if (userID < 0) continue;
+                double[] alpha = new double[1];
+                double[] low_beta = new double[1];
+                double[] high_beta = new double[1];
+                double[] gamma = new double[1];
+                double[] theta = new double[1];
+                for (int i = 0; i < 5; i++)
+                {
+                    engine.IEE_GetAverageBandPowers((uint)userID, channelList[i], theta, alpha, low_beta, high_beta, gamma);
+                    if (itr > 3)
+                    {
+                        file.Write(theta[0] + ",");
+                        file.Write(alpha[0] + ",");
+                        file.Write(low_beta[0] + ",");
+                        file.Write(high_beta[0] + ",");
+                        file.Write(gamma[0] + ",");
+                    }
+                    //      Console.WriteLine("Theta: " + theta[0]);
+                }
+                if (itr > 3)
+                {
+                    if (filename.Contains("Up"))
+                        file.WriteLine("Up");
+                    else if (filename.Contains("Down"))
+                        file.WriteLine("Down");
+                    else if (filename.Contains("Left"))
+                        file.WriteLine("Left");
+                    else if (filename.Contains("Right"))
+                        file.WriteLine("Right");
+                    else if (filename.Contains("Neutral"))
                         file.WriteLine("Neutral");
                 }
                 itr++;
